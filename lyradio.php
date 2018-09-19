@@ -11,7 +11,7 @@ try {
 catch (\danog\MadelineProto\Exception $e) {
     \danog\MadelineProto\Logger::log($e->getMessage());
 }
-$url_stream = "http://air.radiorecord.ru:805/rr_320"
+$url_stream = "http://air.radiorecord.ru:805/rr_320";
 $me = $MadelineProto->get_self();
 if( $me === false ){
     $MadelineProto = new \danog\MadelineProto\API('session.madeline');
@@ -57,7 +57,7 @@ if( $me === false ){
                     }
                     
                     if ( isset($update['update']['message']['message']) ) {
-                        $MadelineProto->messages->sendMessage(['peer' => $update['update']['message']['from_id'], 'message' => "Привет✌️\nЯ радио бот в телеграме.\nПозвони мне.\n\n<b>Разработчик:</b> @LyoSU\nОсновано на @MadelineProto", 'parse_mode' => 'HTML']);
+                        $MadelineProto->messages->sendMessage(['peer' => $update['update']['message']['from_id'], 'message' => "Привет✌️\nЯ радио бот в телеграме.\nПозвони мне.\n\n<b>Разработчики:</b> @LyoSU, @SlavikMIPT\nОсновано на @MadelineProto", 'parse_mode' => 'HTML']);
                     }
                     break;
                 case 'updatePhoneCall':
@@ -66,7 +66,7 @@ if( $me === false ){
                         $times[$update['update']['phone_call']->getOtherID()] = 
                         [time(), $MadelineProto->messages->sendMessage(
                         ['peer' => $update['update']['phone_call']->getOtherID(),
-                         'message' => 'Слушателей: '.count($calls).PHP_EOL.PHP_EOL])\['id']];
+                         'message' => 'Слушателей: '.count($calls).PHP_EOL.PHP_EOL])['id']];
                         $file = "/root/".$update['update']['phone_call']->getOtherID().".raw";
                         exec("php PlayRadio.php $file $url_stream > /dev/null 2>&1 &");
                         $start_time = time();
