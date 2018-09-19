@@ -18,4 +18,5 @@ ADD ./dodofm.service /etc/systemd/system/
 #RUN systemctl enable dodofm.service
 #RUN systemctl daemon-reload
 #RUN systemctl start dodofm.service
-ENTRYPOINT ["/bin/bash"]
+#ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/usr/bin/php"]

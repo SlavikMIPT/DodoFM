@@ -1,5 +1,6 @@
 <?php
 chdir(__DIR__);
+$url_stream = $argv[1];
 if (!file_exists('madeline.php')) {
     copy('https://phar.madelineproto.xyz/madeline.php', 'madeline.php');
 }
@@ -11,7 +12,7 @@ try {
 catch (\danog\MadelineProto\Exception $e) {
     \danog\MadelineProto\Logger::log($e->getMessage());
 }
-$url_stream = "http://nashe.streamr.ru/rock-128.mp3";
+#$url_stream = "http://nashe.streamr.ru/rock-128.mp3";
 $me = $MadelineProto->get_self();
 if( $me === false ){
     $MadelineProto = new \danog\MadelineProto\API('session.madeline');
@@ -33,8 +34,9 @@ if( $me === false ){
     //file_put_contents("log.txt", json_encode($lastUpdate,JSON_PRETTY_PRINT), FILE_APPEND | LOCK_EX);
 
     $offset = intval(end($lastUpdate)['update_id']) + 1;
-        while (1) {
-            sleep(0.5);
+    while (1) {
+        try {
+#           sleep(0.5);
             $updates = $MadelineProto->API->get_updates(['offset' => $offset, 'limit' => 50, 'timeout' => 0]);
 
             foreach ($calls as $key => $call) {
@@ -51,57 +53,60 @@ if( $me === false ){
                             $stat_message = $message;
     #                        $MadelineProto->messages->editMessage(['id' => $times[$call->getOtherID()][1], 'peer' => $call->getOtherID(), 'message' => $message, 'parse_mode' => 'HTML' ]);
                         }
-                     } catch (\danog\MadelineProto\RPCErrorException $e) {
+                     } catch (\danog\MadelineProto\Exception $e) {
                         echo $e;
                         sleep(0.5);
                     }
                 }
             }
-                    foreach ($updates as $update) {
-            $offset = intval($update['update_id']) + 1;
-            switch ($update['update']['_']) {
-                case 'updateNewMessage':
-                    if ($update['update']['message']['out'] || $update['update']['message']['to_id']['_'] !== 'peerUser' || !isset($update['update']['message']['from_id'])) {
-                        continue;
-                    }
+            foreach ($updates as $update) {
+                $offset = intval($update['update_id']) + 1;
+                switch ($update['update']['_']) {
+                    case 'updateNewMessage':
+                        if ($update['update']['message']['out'] || $update['update']['message']['to_id']['_'] !== 'peerUser' || !isset($update['update']['message']['from_id'])) {
+                            continue;
+                        }
 
-                    if ( isset($update['update']['message']['message']) ) {
-                        sleep(0.5);
-                        $ad_text = "<b>Realtime radio and audio streaming</b>\nCall to start using\nBy @LyoSU, @SlavikMIPT\n";
-                        $MadelineProto->messages->sendMessage(['peer' => $update['update']['message']['from_id'], 'message' => $ad_text, 'parse_mode' => 'HTML']);
-                    }
-                    break;
-                case 'updatePhoneCall':
-                    if (is_object($update['update']['phone_call']) &&
-                        isset($update['update']['phone_call']->madeline) &&
-                        $update['update']['phone_call']->getCallState() === \danog\MadelineProto\VoIP::CALL_STATE_INCOMING) {
-                        sleep(0.5);
-                        $peer_id = $update['update']['phone_call']->getOtherID();
-                        $updnewmsg_id = $MadelineProto->messages->sendMessage(['peer' => $peer_id,'message' => $stat_message, 'parse_mode' => 'HTML'])['id'];
-                        $times[$peer_id] = [time(), $updnewmsg_id];
-                        $file = "/root/".$peer_id."_".$updnewmsg_id.".raw";
-                        exec("php PlayRadio.php $file $url_stream > /dev/null 2>&1 &");
-                        $start_time = time();
-                        while (!file_exists($file)) {
-                            if ((time() - $start_time) > 10) {
-                                break;
+                        if ( isset($update['update']['message']['message']) ) {
+                            sleep(0.5);
+                            $ad_text = "<b>Realtime radio and audio streaming</b>\nCall to start using\nBy @LyoSU, @SlavikMIPT\n";
+                            $MadelineProto->messages->sendMessage(['peer' => $update['update']['message']['from_id'], 'message' => $ad_text, 'parse_mode' => 'HTML']);
+                        }
+                        break;
+                    case 'updatePhoneCall':
+                        if (is_object($update['update']['phone_call']) &&
+                            isset($update['update']['phone_call']->madeline) &&
+                            $update['update']['phone_call']->getCallState() === \danog\MadelineProto\VoIP::CALL_STATE_INCOMING) {
+                            sleep(0.5);
+                            $peer_id = $update['update']['phone_call']->getOtherID();
+                            $updnewmsg_id = $MadelineProto->messages->sendMessage(['peer' => $peer_id,'message' => $stat_message, 'parse_mode' => 'HTML'])['id'];
+                            $times[$peer_id] = [time(), $updnewmsg_id];
+                            $file = "/root/".$peer_id."_".$updnewmsg_id.".raw";
+                            exec("php PlayRadio.php $file $url_stream > /dev/null 2>&1 &");
+                            $start_time = time();
+                            while (!file_exists($file)) {
+                                if ((time() - $start_time) > 10) {
+                                    break;
+                                }
                             }
+                            if (file_exists($file)){
+                               $update['update']['phone_call']->accept()->play($file);
+                               unlink($file);
+                            }
+                            $calls[$peer_id] = $update['update']['phone_call'];
+                            $controller = $calls[$peer_id];
+                            $controller->configuration['shared_config']['audio_init_bitrate'] = 120*1000; // Audio bitrate set when the call is started
+                            $controller->configuration['shared_config']['audio_max_bitrate']  = 120*1000; // Maximum audio bitrate
+                            $controller->configuration['shared_config']['audio_min_bitrate']  = 80*1000; // Minimum audio bitrate
+                            $controller->configuration['shared_config']['audio_bitrate_step_decr']  = 2000; // Decreasing step: when libtgvoip has to lower the bitrate, it decreases it `audio_bitrate_step_decr` bps at a time
+                            $controller->configuration['shared_config']['audio_bitrate_step_incr']  = 5000; // Increasing step: when libtgvoip has to make the bitrate higher, it increases it `audio_bitrate_step_decr` bps at a time
+                            $controller->parseConfig();
                         }
-                        if (file_exists($file)){
-                           $update['update']['phone_call']->accept()->play($file);
-                           unlink($file);
-                        }
-                        $calls[$peer_id] = $update['update']['phone_call'];
-                        $controller = $calls[$peer_id];
-                        $controller->configuration['shared_config']['audio_init_bitrate'] = 90*1000; // Audio bitrate set when the call is started
-                        $controller->configuration['shared_config']['audio_max_bitrate']  = 110*1000; // Maximum audio bitrate
-                        $controller->configuration['shared_config']['audio_min_bitrate']  = 80*1000; // Minimum audio bitrate
-                        $controller->configuration['shared_config']['audio_bitrate_step_decr']  = 1000; // Decreasing step: when libtgvoip has to lower the bitrate, it decreases it `audio_bitrate_step_decr` bps at a time
-                        $controller->configuration['shared_config']['audio_bitrate_step_incr']  = 1000; // Increasing step: when libtgvoip has to make the bitrate higher, it increases it `audio_bitrate_step_decr` bps at a time
-                        $controller->parseConfig();
-                    }
-                    break;
-           }
+                        break;
+                }
+            }
+        }catch (\danog\MadelineProto\Exception $e) {
+            sleep(1);
+            echo $e;
         }
-#       sleep(1);
-    }                                                   
+    }
