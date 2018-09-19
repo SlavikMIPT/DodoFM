@@ -11,7 +11,7 @@ try {
 catch (\danog\MadelineProto\Exception $e) {
     \danog\MadelineProto\Logger::log($e->getMessage());
 }
-
+$url_stream = "http://air.radiorecord.ru:805/rr_320"
 $me = $MadelineProto->get_self();
 if( $me === false ){
     $MadelineProto = new \danog\MadelineProto\API('session.madeline');
@@ -68,7 +68,7 @@ if( $me === false ){
                         ['peer' => $update['update']['phone_call']->getOtherID(),
                          'message' => 'Слушателей: '.count($calls).PHP_EOL.PHP_EOL])\['id']];
                         $file = "/root/".$update['update']['phone_call']->getOtherID().".raw";
-                        exec("php PlayRadio.php $file > /dev/null 2>&1 &");
+                        exec("php PlayRadio.php $file $url_stream > /dev/null 2>&1 &");
                         $start_time = time();
                         while (!file_exists($file)) {
                             if ((time() - $start_time) > 10) {
@@ -77,7 +77,7 @@ if( $me === false ){
                         }
                         $update['update']['phone_call']->accept()->play($file);
                         unlink($file);
-                           
+
                         $controller = $calls[$update['update']['phone_call']->getOtherID()] = $update['update']['phone_call'];
                         $controller->configuration['shared_config']['audio_init_bitrate'] = 80*1000; // Audio bitrate set when the call is started
                         $controller->configuration['shared_config']['audio_max_bitrate']  = 110*1000; // Maximum audio bitrate
