@@ -2,9 +2,11 @@
 1. Загружаем docker образ
 
 `sudo docker pull slavikmipt/dodofm:latest`
+
 2. Запускаем, потребуется api_id и api_hash с my.telegram.org и аккаунт Telegram
 
 `sudo docker run --name echomsk --restart always -ti slavikmipt/dodofm:latest lyradio.php http://ice912.echo.msk.ru:9120/24.aac`
+
 ### Потоки:
 - RockFM http://nashe.streamr.ru/rock-128.mp3
 - Эхо Москвы http://ice912.echo.msk.ru:9120/24.aac
