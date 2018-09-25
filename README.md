@@ -17,4 +17,4 @@ sudo docker run --name echomsk --restart always -ti slavikmipt/dodofm:lat
 - Канал разработчика https://t.me/mediatube_stream
 - Чат https://t.me/mediatube_chat
 
-[@SlavikMIPT], [@LyoSu], [@MadelineProto]
+[@SlavikMIPT](https://github.com/SlavikMIPT), [@LyoSu](https://github.com/LyoSu), [@MadelineProto](https://github.com/MadelineProto)
